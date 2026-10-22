@@ -1,8 +1,8 @@
 package agh.po.lab1;
 
-public class Main{
+public class Main {
     public static void main(String[] args){
-        System.out.println("Hello, World! ");
+        System.out.println("Hello, World!");
 
         if(args.length <= 0){
             System.out.println("Podaj argument!!");
@@ -21,6 +21,5 @@ public class Main{
                 System.out.println("Podaj liczbe calkowita");
             }
         }
-
     }
 }
