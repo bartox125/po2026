@@ -1,0 +1,72 @@
+@startuml
+title Sekwencja: Wczytaj strukturę z pliku (odtworzenie drzewa i właścicieli)
+
+actor "Użytkownik" as U
+participant "Interfejs\n(obsługa)" as UI
+participant ":SystemPlikow" as SP
+participant ":SystemPlikowZapis" as ZP
+participant "Files\n(java.nio)" as F
+participant "Gson\n(biblioteka)" as G
+participant "WezelDane" as WD
+participant ":RejestrUzytkownikow" as RU
+
+U -> UI : wczytaj strukturę
+activate UI
+UI -> SP : wczytajZPliku()
+activate SP
+SP -> SP : wymagajZalogowanego()
+SP -> ZP : wczytaj(rejestr)
+activate ZP
+
+ZP -> F : readString(plik)
+activate F
+alt błąd odczytu (brak pliku, IOException)
+  F --> ZP : IOException
+  ZP --> SP : BladOperacjiException("nie udało się wczytać")
+  SP --> UI : BladOperacjiException
+  UI --> U : "Nie udało się wczytać struktury"
+else plik odczytany
+  F --> ZP : json
+  deactivate F
+  ZP -> G : fromJson(json, WezelDane.class)
+  activate G
+  G --> ZP : korzenDane
+  deactivate G
+
+  ZP -> WD : doWezla(rejestr)
+  activate WD
+  loop dla każdego WezelDane w drzewie (rekurencja po dzieciach)
+    WD -> RU : znajdz(wlascicielLogin)
+    activate RU
+    RU --> WD : uzytkownik / null
+    deactivate RU
+    alt właściciel nie istnieje w rejestrze kont
+      WD --> ZP : BladOperacjiException("nieznany właściciel")
+      ZP --> SP : BladOperacjiException
+      SP --> UI : BladOperacjiException
+      UI --> U : "Wczytanie przerwane: plik wskazuje nieistniejącego użytkownika"
+    else właściciel znaleziony
+      note right of WD
+        Tworzy Plik lub Katalog, ustawia prawa i
+        wlasciciela (referencja do obiektu z rejestru),
+        dodaje dzieci do katalogu.
+      end note
+    end
+  end
+  WD --> ZP : nowyKorzen
+  deactivate WD
+  ZP --> SP : nowyKorzen
+  deactivate ZP
+
+  SP -> SP : korzen = nowyKorzen\nbiezacyKatalog = korzen
+  note right of SP
+    Nowe drzewo budowane jest w całości zanim zastąpi stare —
+    przy błędzie obecna struktura zostaje nietknięta.
+  end note
+  SP --> UI : (ok)
+  UI --> U : "Wczytano strukturę"
+end
+deactivate SP
+deactivate UI
+
+@enduml
