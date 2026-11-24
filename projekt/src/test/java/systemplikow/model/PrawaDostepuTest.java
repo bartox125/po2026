@@ -32,22 +32,23 @@ class PrawaDostepuTest {
     void odbierzUsuwaUprawnienieTylkoZWybranegoZbioru() {
         PrawaDostepu prawa = new PrawaDostepu();
 
-        prawa.odbierz(ZAPIS, true);
+        prawa.odbierz(ODCZYT, true); // ODCZYT mają domyślnie OBA zbiory
 
-        assertFalse(prawa.czyPozwala(ZAPIS, true));
-        assertTrue(prawa.czyPozwala(ODCZYT, true));
-        assertTrue(prawa.czyPozwala(ODCZYT, false));
+        assertFalse(prawa.czyPozwala(ODCZYT, true));
+        assertTrue(prawa.czyPozwala(ODCZYT, false)); // pozostali nietknięci
+        assertTrue(prawa.czyPozwala(ZAPIS, true));
     }
 
     @Test
     void nadajDodajeUprawnienieTylkoDoWybranegoZbioru() {
         PrawaDostepu prawa = new PrawaDostepu();
 
+        prawa.odbierz(ZAPIS, true); // teraz żaden zbiór nie ma ZAPIS
         prawa.nadaj(ZAPIS, false);
 
         assertTrue(prawa.czyPozwala(ZAPIS, false));
         assertEquals(EnumSet.allOf(Uprawnienie.class), prawa.getPrawaPozostalych());
-        assertTrue(prawa.czyPozwala(ZAPIS, true));
+        assertFalse(prawa.czyPozwala(ZAPIS, true)); // właściciel nietknięty
     }
 
     @Test
@@ -81,10 +82,11 @@ class PrawaDostepuTest {
 
         prawa.nadaj(WYKONANIE, true);
         assertTrue(prawa.czyPozwala(WYKONANIE, true));
+        assertFalse(prawa.czyPozwala(WYKONANIE, false)); // pozostali nadal bez praw
     }
 
     @Test
-    void gettery_zwracajaKopieNiePozwalajaPsucStanu() {
+    void getteryZwracajaKopieNiePozwalajaPsucStanu() {
         PrawaDostepu prawa = new PrawaDostepu();
 
         Set<Uprawnienie> wlasciciel = prawa.getPrawaWlasciciela();
@@ -97,11 +99,14 @@ class PrawaDostepuTest {
     }
 
     @Test
-    void gettery_zwracajaAktualneZbiory() {
+    void getteryOdzwierciedlajaZmianyPoNadajIOdbierz() {
         PrawaDostepu prawa = new PrawaDostepu();
 
-        assertEquals(EnumSet.allOf(Uprawnienie.class), prawa.getPrawaWlasciciela());
-        assertEquals(EnumSet.of(ODCZYT, WYKONANIE), prawa.getPrawaPozostalych());
+        prawa.odbierz(WYKONANIE, true);
+        prawa.nadaj(ZAPIS, false);
+
+        assertEquals(EnumSet.of(ODCZYT, ZAPIS), prawa.getPrawaWlasciciela());
+        assertEquals(EnumSet.allOf(Uprawnienie.class), prawa.getPrawaPozostalych());
     }
 
     @Test
@@ -117,6 +122,53 @@ class PrawaDostepuTest {
         prawa.odbierz(ZAPIS, false);
         prawa.odbierz(WYKONANIE, false);
         assertEquals("rw----", prawa.toString());
+    }
+
+    @Test
+    void konstruktorKopiujacyKopiujeObaZbiory() {
+        PrawaDostepu oryginal = new PrawaDostepu();
+        oryginal.odbierz(WYKONANIE, true);
+        oryginal.nadaj(ZAPIS, false);
+
+        PrawaDostepu kopia = new PrawaDostepu(oryginal);
+
+        assertEquals(oryginal.getPrawaWlasciciela(), kopia.getPrawaWlasciciela());
+        assertEquals(oryginal.getPrawaPozostalych(), kopia.getPrawaPozostalych());
+        assertEquals("rw-rwx", kopia.toString());
+    }
+
+    @Test
+    void kopiaJestNiezaleznaOdOryginalu() {
+        PrawaDostepu oryginal = new PrawaDostepu();
+        PrawaDostepu kopia = new PrawaDostepu(oryginal);
+
+        oryginal.odbierz(ZAPIS, true);
+        oryginal.nadaj(ZAPIS, false);
+        assertTrue(kopia.czyPozwala(ZAPIS, true));
+        assertFalse(kopia.czyPozwala(ZAPIS, false));
+
+        kopia.odbierz(ODCZYT, true);
+        kopia.odbierz(ODCZYT, false);
+        assertTrue(oryginal.czyPozwala(ODCZYT, true));
+        assertTrue(oryginal.czyPozwala(ODCZYT, false));
+    }
+
+    @Test
+    void konstruktorKopiujacyDlaPustychPrawDziala() {
+        PrawaDostepu oryginal = new PrawaDostepu();
+        for (Uprawnienie u : Uprawnienie.values()) {
+            oryginal.odbierz(u, true);
+            oryginal.odbierz(u, false);
+        }
+
+        PrawaDostepu kopia = new PrawaDostepu(oryginal);
+
+        assertEquals("------", kopia.toString());
+    }
+
+    @Test
+    void nullJakoPrawaWKonstruktorzeKopiujacymToNullPointerException() {
+        assertThrows(NullPointerException.class, () -> new PrawaDostepu((PrawaDostepu) null));
     }
 
     @Test
