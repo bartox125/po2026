@@ -24,6 +24,17 @@ public class PrawaDostepu {
     }
 
     /**
+     * Konstruktor kopiujący (D34): tworzy niezależny obiekt z tymi samymi prawami. Późniejsza zmiana
+     * oryginału nie wpływa na kopię i odwrotnie. Używa go {@code WezelSystemuPlikow.setPrawa}, żeby węzeł
+     * nie współdzielił obiektu z wywołującym.
+     */
+    public PrawaDostepu(PrawaDostepu inne) {
+        Objects.requireNonNull(inne, "inne");
+        prawaWlasciciela.addAll(inne.prawaWlasciciela);
+        prawaPozostalych.addAll(inne.prawaPozostalych);
+    }
+
+    /**
      * Czy podane uprawnienie jest przyznane.
      *
      * @param jestWlascicielem {@code true} — sprawdzane są prawa właściciela, {@code false} — prawa pozostałych
