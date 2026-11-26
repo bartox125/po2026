@@ -14,4 +14,9 @@ public class Sprzeglo extends Komponent{
     void zwolnij(){
         stanSprzegla=false;
     }
+
+    @Override
+    public String toString() {
+        return "Sprzeglo " + producent + " " + model + ": " + (stanSprzegla ? "wcisniete" : "zwolnione");
+    }
 }

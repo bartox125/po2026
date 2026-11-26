@@ -16,4 +16,20 @@ public class Silnik extends Komponent{
     void zatrzymaj(){
         this.obroty=0;
     }
+
+    void zwiekszObroty(){
+        if(obroty+100<this.maxObroty){
+            this.obroty+=100;
+        }
+    }
+    void zmniejszObroty(){
+        if(obroty>100){
+            this.obroty-=100;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "Silnik " + producent + " " + model + ": " + obroty + "/" + maxObroty + " obr/min";
+    }
 }
